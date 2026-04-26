@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>くくの れんしゅう</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#FFD08A">
+
+<!-- iOS PWA -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="くく">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --maru: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Yu Gothic', system-ui, sans-serif;
+  --pop: 'Mochiy Pop One', 'Zen Maru Gothic', sans-serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: var(--maru);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 20% 10%, #FFE8B0 0%, transparent 40%),
+    radial-gradient(circle at 85% 15%, #C8E8FF 0%, transparent 40%),
+    radial-gradient(circle at 50% 90%, #FFD8E8 0%, transparent 45%),
+    linear-gradient(180deg, #FFFAF0 0%, #FFF0F8 100%);
+  color: #7A4A2F;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+button:active { transform: scale(0.94); }
+button:disabled { cursor: default; opacity: 0.5; }
+
+#app { min-height: 100vh; min-height: 100dvh; position: relative; }
+
+/* Floating shapes */
+.bg-shape {
+  position: fixed; border-radius: 30% 70% 60% 40% / 50% 60% 40% 50%;
+  opacity: 0.4; pointer-events: none; z-index: -1;
+  animation: drift 6s ease-in-out infinite;
+}
+
+@keyframes drift {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(15deg); }
+}
+@keyframes pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-12px); }
+  75% { transform: translateX(12px); }
+}
+@keyframes wobble {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+/* HOME */
+.home { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+.home-title { text-align: center; margin-bottom: 32px; animation: pop 0.6s ease-out; }
+.home-title .emoji { font-size: 80px; margin-bottom: 8px; }
+.home-title h1 {
+  font-family: var(--pop); color: #FF4D7E;
+  font-size: clamp(36px, 7vw, 72px); margin: 0;
+  text-shadow: 4px 4px 0 #FFD08A, 8px 8px 0 rgba(0,0,0,0.05);
+}
+.home-title p { font-size: clamp(18px, 2.5vw, 24px); font-weight: 700; margin-top: 16px; color: #7A4A2F; }
+
+.dan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; max-width: 640px; }
+.dan-btn {
+  border-radius: 28px; padding: 28px 16px; transition: transform 0.1s;
+  display: flex; flex-direction: column; align-items: center;
+}
+.dan-btn .num { font-family: var(--pop); font-size: clamp(40px, 6vw, 64px); font-weight: 900; }
+.dan-btn .label { font-size: clamp(14px, 1.8vw, 20px); font-weight: 700; margin-top: 4px; }
+
+.special-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; max-width: 640px; margin-top: 20px; }
+.special-btn {
+  border-radius: 28px; padding: 24px 16px; color: white; border: 4px solid white;
+  display: flex; flex-direction: column; align-items: center;
+}
+.special-btn .big { font-family: var(--pop); font-size: clamp(22px, 3.5vw, 36px); font-weight: 900; }
+.special-btn .small { font-size: clamp(12px, 1.5vw, 16px); font-weight: 700; opacity: 0.95; margin-top: 4px; }
+
+/* QUIZ */
+.quiz { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding: 16px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.back-btn {
+  background: white; color: #7A4A2F; border: 3px solid #E8D5BB;
+  border-radius: 16px; padding: 12px 20px; font-weight: 900; font-size: 18px;
+  box-shadow: 0 4px 0 #E8D5BB;
+}
+.dots { display: flex; align-items: center; gap: 8px; }
+.dot { border-radius: 50%; transition: all 0.2s; }
+
+.qcard {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 40px; padding: 32px 24px; margin-bottom: 16px; position: relative;
+  border-width: 5px; border-style: solid;
+}
+.qcard.shake { animation: shake 0.5s ease-in-out; }
+.qnum { font-size: clamp(16px, 2vw, 22px); font-weight: 900; margin-bottom: 16px; }
+.qline {
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--pop); font-weight: 900;
+  font-size: clamp(56px, 9vw, 130px);
+}
+.qline .op { font-size: clamp(40px, 7vw, 90px); opacity: 0.7; }
+.ansbox {
+  background: white; border-radius: 18px; padding: 8px 24px;
+  border: 4px dashed; min-width: 120px; text-align: center;
+}
+
+.feedback-overlay {
+  position: absolute; inset: 0; border-radius: 40px;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; animation: pop 0.3s ease-out;
+}
+.feedback-overlay.correct { background: rgba(255, 255, 200, 0.85); }
+.feedback-overlay.wrong { background: rgba(255, 220, 220, 0.85); }
+.feedback-overlay .face { font-size: clamp(96px, 16vw, 160px); animation: wobble 0.6s ease-in-out infinite; }
+.feedback-overlay .text {
+  font-family: var(--pop); font-weight: 900;
+  font-size: clamp(40px, 6vw, 72px);
+  text-shadow: 3px 3px 0 white;
+}
+.feedback-overlay .answer { font-weight: 900; font-size: clamp(22px, 3vw, 36px); margin-top: 12px; color: #7A4A2F; }
+
+/* Number pad */
+.pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 720px; width: 100%; margin: 0 auto; }
+.pad button {
+  border-radius: 18px; padding: 18px 0; font-family: var(--pop); font-weight: 900;
+  font-size: clamp(28px, 4.5vw, 44px);
+  transition: transform 0.1s;
+}
+.pad .num-btn {
+  background: white; color: #7A4A2F; border: 3px solid #E8D5BB;
+  box-shadow: 0 5px 0 #E8D5BB;
+}
+.pad .clear-btn {
+  background: #FFE8E0; color: #D85A1F; border: 3px solid #F0B38A;
+  box-shadow: 0 5px 0 #F0B38A; grid-column: span 2;
+  font-size: clamp(20px, 3vw, 30px);
+}
+.pad .submit-btn {
+  background: linear-gradient(135deg, #3DB54A 0%, #6FD050 100%);
+  color: white; border: 3px solid white;
+  box-shadow: 0 5px 0 #2A8A38, 0 6px 12px rgba(0,0,0,0.1);
+  grid-column: span 2; font-size: clamp(20px, 3vw, 30px);
+}
+.pad .submit-btn:disabled {
+  background: #C8C8C8; box-shadow: 0 5px 0 #999;
+}
+
+/* RESULT */
+.result { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; position: relative; overflow: hidden; }
+.result-card {
+  background: white; border: 5px solid #FFD08A; border-radius: 40px;
+  padding: 40px 32px; max-width: 560px; width: 100%; text-align: center;
+  box-shadow: 0 8px 0 #FFD08A, 0 12px 24px rgba(0,0,0,0.1);
+  animation: pop 0.6s ease-out;
+}
+.result-emoji { font-size: clamp(96px, 14vw, 144px); animation: wobble 1s ease-in-out infinite; }
+.result-title {
+  font-family: var(--pop); color: #FF4D7E;
+  font-size: clamp(36px, 6vw, 64px); margin: 8px 0 16px;
+  text-shadow: 3px 3px 0 #FFD08A;
+}
+.stars { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
+.star { font-size: clamp(40px, 6vw, 64px); }
+.star.dim { filter: grayscale(1); opacity: 0.3; }
+.score-line { font-size: clamp(24px, 4vw, 40px); font-weight: 900; color: #7A4A2F; margin-bottom: 4px; }
+.percent { font-size: clamp(18px, 2.5vw, 24px); font-weight: 700; color: #A88060; margin-bottom: 24px; }
+.wrong-box {
+  background: #FFF5E8; border: 2px dashed #F0B38A;
+  border-radius: 16px; padding: 16px; margin-bottom: 24px; text-align: left;
+}
+.wrong-box .head { font-weight: 900; font-size: 18px; color: #D85A1F; margin-bottom: 8px; }
+.wrong-box .row { font-size: 18px; font-weight: 700; color: #7A4A2F; margin: 4px 0; }
+.wrong-box .row .ans { color: #3DB54A; }
+.result-actions { display: flex; gap: 12px; flex-direction: column; }
+@media (min-width: 540px) { .result-actions { flex-direction: row; } }
+.result-actions button {
+  flex: 1; border-radius: 18px; padding: 18px 0;
+  font-family: var(--pop); font-weight: 900; font-size: clamp(20px, 2.5vw, 26px);
+}
+.retry-btn {
+  background: linear-gradient(135deg, #FF4D7E 0%, #FF8A1F 100%);
+  color: white; border: 3px solid white;
+  box-shadow: 0 5px 0 #C73D5E, 0 6px 12px rgba(0,0,0,0.1);
+}
+.home-btn {
+  background: white; color: #7A4A2F; border: 3px solid #E8D5BB;
+  box-shadow: 0 5px 0 #E8D5BB;
+}
+
+.confetti {
+  position: absolute; pointer-events: none;
+  width: 12px; height: 12px;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Background floating shapes -->
+<div class="bg-shape" style="left:5%;top:15%;width:60px;height:60px;background:#FFD08A;animation-delay:0s"></div>
+<div class="bg-shape" style="left:88%;top:30%;width:40px;height:40px;background:#FFB3C7;animation-delay:1.2s"></div>
+<div class="bg-shape" style="left:10%;top:75%;width:50px;height:50px;background:#A8AEEC;animation-delay:2.4s"></div>
+<div class="bg-shape" style="left:92%;top:78%;width:35px;height:35px;background:#9CDC92;animation-delay:0.8s"></div>
+<div class="bg-shape" style="left:50%;top:5%;width:30px;height:30px;background:#F2D85A;animation-delay:1.8s"></div>
+
+<script>
+// ============ DATA ============
+const PRAISE = ["せいかい！","すごい！","やったね！","てんさい！","そのちょうし！","ナイス！"];
+const CHEER  = ["おしい！","もういちど！","がんばれ！","ファイト！"];
+const DAN_COLORS = {
+  1:{bg:"#FFE5EC",fg:"#FF4D7E",ring:"#FFB3C7"},
+  2:{bg:"#FFF1D6",fg:"#FF8A1F",ring:"#FFD08A"},
+  3:{bg:"#FFFAC8",fg:"#E5A800",ring:"#F2D85A"},
+  4:{bg:"#DFF7D8",fg:"#3DB54A",ring:"#9CDC92"},
+  5:{bg:"#D6F0FF",fg:"#1E9CD8",ring:"#8FD0F0"},
+  6:{bg:"#E0E0FF",fg:"#5258D8",ring:"#A8AEEC"},
+  7:{bg:"#EFD9FF",fg:"#8B3DD8",ring:"#C9A6EC"},
+  8:{bg:"#FFD9F0",fg:"#D83DA0",ring:"#F0A6D0"},
+  9:{bg:"#FFE0CC",fg:"#D85A1F",ring:"#F0B38A"},
+};
+
+// ============ STATE ============
+const state = {
+  screen: 'home',
+  dan: null,
+  questions: [],
+  qIndex: 0,
+  input: '',
+  feedback: null,
+  praiseText: '',
+  correctCount: 0,
+  wrongList: [],
+  shake: false,
+};
+
+function setState(updates) {
+  Object.assign(state, updates);
+  render();
+}
+
+// ============ HELPERS ============
+function makeQuestions(dan) {
+  const pool = [];
+  if (dan === 'all' || dan === 'random') {
+    for (let a=1; a<=9; a++) for (let b=1; b<=9; b++) pool.push([a,b]);
+  } else {
+    for (let b=1; b<=9; b++) pool.push([dan, b]);
+  }
+  for (let i=pool.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [pool[i],pool[j]] = [pool[j],pool[i]];
+  }
+  if (dan === 'all' || dan === 'random') return pool.slice(0, 10);
+  return pool;
+}
+
+function startQuiz(dan) {
+  setState({
+    screen: 'quiz',
+    dan,
+    questions: makeQuestions(dan),
+    qIndex: 0,
+    input: '',
+    feedback: null,
+    correctCount: 0,
+    wrongList: [],
+  });
+}
+
+function goHome() { setState({ screen: 'home', dan: null }); }
+
+function handleNumber(n) {
+  if (state.feedback) return;
+  if (state.input.length >= 2) return;
+  setState({ input: state.input + n });
+}
+function handleClear() {
+  if (state.feedback) return;
+  setState({ input: '' });
+}
+function handleSubmit() {
+  if (state.feedback || state.input === '') return;
+  const [a,b] = state.questions[state.qIndex];
+  const ans = parseInt(state.input, 10);
+  const correct = ans === a*b;
+  if (correct) {
+    setState({
+      feedback: 'correct',
+      praiseText: PRAISE[Math.floor(Math.random()*PRAISE.length)],
+      correctCount: state.correctCount + 1,
+    });
+  } else {
+    setState({
+      feedback: 'wrong',
+      praiseText: CHEER[Math.floor(Math.random()*CHEER.length)],
+      wrongList: [...state.wrongList, {a,b,given:ans}],
+      shake: true,
+    });
+    setTimeout(() => setState({shake:false}), 500);
+  }
+  setTimeout(() => {
+    const next = state.qIndex + 1;
+    if (next >= state.questions.length) {
+      setState({ screen: 'result' });
+    } else {
+      setState({ qIndex: next, input: '', feedback: null });
+    }
+  }, 1400);
+}
+
+// ============ RENDER ============
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderHome() {
+  const dans = [1,2,3,4,5,6,7,8,9];
+  const dansHtml = dans.map((d,i) => {
+    const c = DAN_COLORS[d];
+    return `<button class="dan-btn" data-dan="${d}" style="background:${c.bg};border:4px solid ${c.ring};box-shadow:0 6px 0 ${c.ring}, 0 8px 16px rgba(0,0,0,0.08);animation:pop 0.4s ease-out ${i*0.05}s both">
+      <div class="num" style="color:${c.fg}">${d}</div>
+      <div class="label" style="color:${c.fg}">の だん</div>
+    </button>`;
+  }).join('');
+
+  return `
+    <div class="home">
+      <div class="home-title">
+        <div class="emoji">🦊</div>
+        <h1>くくの れんしゅう</h1>
+        <p>すきな だんを えらんでね</p>
+      </div>
+      <div class="dan-grid">${dansHtml}</div>
+      <div class="special-grid">
+        <button class="special-btn" data-dan="all" style="background:linear-gradient(135deg,#FFB3C7 0%,#A8AEEC 100%);box-shadow:0 6px 0 #8B6FC4,0 8px 16px rgba(0,0,0,0.1);animation:pop 0.4s ease-out 0.5s both">
+          <div class="big">🌈 ぜんぶ</div>
+          <div class="small">1〜9のだん から 10もん</div>
+        </button>
+        <button class="special-btn" data-dan="random" style="background:linear-gradient(135deg,#FFD08A 0%,#9CDC92 100%);box-shadow:0 6px 0 #5C9C4A,0 8px 16px rgba(0,0,0,0.1);animation:pop 0.4s ease-out 0.55s both">
+          <div class="big">🎲 ランダム</div>
+          <div class="small">シャッフルで 10もん</div>
+        </button>
+      </div>
+    </div>`;
+}
+
+function renderQuiz() {
+  const c = (typeof state.dan === 'number') ? DAN_COLORS[state.dan] : {bg:"#FFE8F0",fg:"#FF4D7E",ring:"#FFB3C7"};
+  const [a,b] = state.questions[state.qIndex];
+  const total = state.questions.length;
+
+  const dotsHtml = Array.from({length: total}).map((_,i) => {
+    const size = i === state.qIndex ? 18 : 12;
+    let bg = '#EFE6DC';
+    if (i < state.qIndex) bg = c.fg;
+    else if (i === state.qIndex) bg = c.ring;
+    const border = i === state.qIndex ? `2px solid ${c.fg}` : 'none';
+    return `<div class="dot" style="width:${size}px;height:${size}px;background:${bg};border:${border}"></div>`;
+  }).join('');
+
+  let feedbackHtml = '';
+  if (state.feedback === 'correct') {
+    feedbackHtml = `<div class="feedback-overlay correct">
+      <div style="text-align:center">
+        <div class="face">⭕</div>
+        <div class="text" style="color:#3DB54A">${esc(state.praiseText)}</div>
+      </div>
+    </div>`;
+  } else if (state.feedback === 'wrong') {
+    feedbackHtml = `<div class="feedback-overlay wrong">
+      <div style="text-align:center">
+        <div class="face">❌</div>
+        <div class="text" style="color:#D85A1F">${esc(state.praiseText)}</div>
+        <div class="answer">こたえは ${a*b} だよ</div>
+      </div>
+    </div>`;
+  }
+
+  const numBtns = [1,2,3,4,5,6,7,8,9,0].map(n =>
+    `<button class="num-btn" data-num="${n}" ${state.feedback?'disabled':''}>${n}</button>`
+  ).join('');
+
+  return `
+    <div class="quiz">
+      <div class="topbar">
+        <button class="back-btn" id="back-btn">← もどる</button>
+        <div class="dots">${dotsHtml}</div>
+      </div>
+      <div class="qcard ${state.shake?'shake':''}" style="background:${c.bg};border-color:${c.ring};box-shadow:0 8px 0 ${c.ring}, 0 12px 24px rgba(0,0,0,0.08)">
+        <div class="qnum" style="color:${c.fg}">だい ${state.qIndex+1} もん / ${total}</div>
+        <div class="qline" style="color:${c.fg}">
+          <span style="animation:pop 0.4s ease-out">${a}</span>
+          <span class="op">×</span>
+          <span style="animation:pop 0.4s ease-out 0.1s both">${b}</span>
+          <span class="op">=</span>
+          <div class="ansbox" style="border-color:${c.ring};color:${c.fg}">${state.input || '?'}</div>
+        </div>
+        ${feedbackHtml}
+      </div>
+      <div class="pad">
+        ${numBtns}
+        <button class="clear-btn" id="clear-btn" ${state.feedback?'disabled':''}>⌫ けす</button>
+        <button class="submit-btn" id="submit-btn" ${(state.feedback||state.input==='')?'disabled':''}>✓ こたえる</button>
+      </div>
+    </div>`;
+}
+
+function renderResult() {
+  const total = state.questions.length;
+  const correct = state.correctCount;
+  const percent = Math.round((correct/total)*100);
+  let stars = 1, title = 'がんばったね！', emoji = '🌱';
+  if (percent === 100) { stars = 3; title = 'パーフェクト！！'; emoji = '🏆'; }
+  else if (percent >= 70) { stars = 2; title = 'すごい！'; emoji = '🎉'; }
+
+  const starsHtml = [1,2,3].map(s =>
+    `<span class="star ${s<=stars?'':'dim'}" style="${s<=stars?`animation:pop 0.5s ease-out ${s*0.2}s both`:''}">⭐</span>`
+  ).join('');
+
+  let confettiHtml = '';
+  if (percent >= 70) {
+    const colors = ["#FF4D7E","#FFB347","#3DB54A","#1E9CD8","#8B3DD8","#FFD700"];
+    for (let i=0; i<30; i++) {
+      const left = Math.random()*100;
+      const delay = Math.random()*2;
+      const dur = 2+Math.random()*2;
+      const color = colors[i%colors.length];
+      const round = i%2===0 ? '50%' : '2px';
+      confettiHtml += `<div class="confetti" style="left:${left}%;background:${color};border-radius:${round};animation:confetti-fall ${dur}s linear ${delay}s infinite"></div>`;
+    }
+  }
+
+  let wrongHtml = '';
+  if (state.wrongList.length > 0) {
+    const rows = state.wrongList.map(w =>
+      `<div class="row">${w.a} × ${w.b} = <span class="ans">${w.a*w.b}</span></div>`
+    ).join('');
+    wrongHtml = `<div class="wrong-box">
+      <div class="head">📝 まちがえた もんだい</div>
+      ${rows}
+    </div>`;
+  }
+
+  return `
+    <div class="result">
+      ${confettiHtml}
+      <div class="result-card">
+        <div class="result-emoji">${emoji}</div>
+        <h2 class="result-title">${title}</h2>
+        <div class="stars">${starsHtml}</div>
+        <div class="score-line">${correct} / ${total} もん せいかい</div>
+        <div class="percent">${percent}%</div>
+        ${wrongHtml}
+        <div class="result-actions">
+          <button class="retry-btn" id="retry-btn">🔄 もういちど</button>
+          <button class="home-btn" id="home-btn">🏠 ホームへ</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (state.screen === 'home') {
+    app.innerHTML = renderHome();
+    app.querySelectorAll('[data-dan]').forEach(b => {
+      b.addEventListener('click', () => {
+        const v = b.dataset.dan;
+        startQuiz(v === 'all' || v === 'random' ? v : parseInt(v,10));
+      });
+    });
+  } else if (state.screen === 'quiz') {
+    app.innerHTML = renderQuiz();
+    app.querySelector('#back-btn').addEventListener('click', goHome);
+    app.querySelectorAll('[data-num]').forEach(b => {
+      b.addEventListener('click', () => handleNumber(b.dataset.num));
+    });
+    app.querySelector('#clear-btn').addEventListener('click', handleClear);
+    app.querySelector('#submit-btn').addEventListener('click', handleSubmit);
+  } else if (state.screen === 'result') {
+    app.innerHTML = renderResult();
+    app.querySelector('#retry-btn').addEventListener('click', () => startQuiz(state.dan));
+    app.querySelector('#home-btn').addEventListener('click', goHome);
+  }
+}
+
+render();
+
+// Service worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
